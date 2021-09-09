@@ -55,8 +55,8 @@ def update():
         if point.y > HEIGHT:
           point.dy = -abs(point.dy)
 
-def draw(surface):
-    alpha_surface = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+def draw(surface, alpha_surface):
+    alpha_surface.fill([0,0,0,0])
     for i in range(0, len(points)):
         for j in range(i + 1, len(points)):
             # вычисляем расстояние между линиями в -00 -> 0..1
@@ -64,15 +64,15 @@ def draw(surface):
 
             # если фейд положителен рисуем
             if fade > 0:
-                alpha_surface.fill([0,0,0,0])
-                pygame.draw.line(
-                    alpha_surface,
-                    (0, 255, 0, int(fade * 255)),
-                    (points[i].x, points[i].y),
-                    (points[j].x, points[j].y),
-                    int(fade * 5 + 1)
-                )
-                surface.blit(alpha_surface, (0,0))
+                for w in range(int(fade * 5 + 1)):
+                    pygame.draw.aaline(
+                        alpha_surface,
+                        (0, 255, 0, int(fade * 255)),
+                        (points[i].x+w, points[i].y),
+                        (points[j].x+w, points[j].y),
+                        1
+                    )
+        surface.blit(alpha_surface, (0,0))
 
     for point in points:
         pygame.draw.circle(surface, (0, 255, 100, 0), (point.x, point.y), 5)
@@ -86,6 +86,7 @@ def main():
 
     init()
 
+    alpha_surface = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
     while is_running:
         # events
         for event in pygame.event.get():
@@ -96,7 +97,7 @@ def main():
 
         # draw
         surface.fill([0,0,0]) # white background
-        draw(surface)
+        draw(surface, alpha_surface)
 
         clock.tick(30)
 
