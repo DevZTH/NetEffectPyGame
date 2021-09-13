@@ -9,10 +9,12 @@
 # Licence:     GNU GPL 3
 #-------------------------------------------------------------------------------
 import pygame
+import colorsys
 
 from pygame import gfxdraw
 from pygame import draw_py
 from dataclasses import dataclass
+
 
 import random
 import math
@@ -57,7 +59,8 @@ def update():
             point.dy = -abs(point.dy)
 
 
-def draw(surface, alpha_surface):
+def draw(surface, alpha_surface, color):
+    r,g,b = color
     alpha_surface.fill([0,0,0,0])
     for i in range(0, len(points)):
         for j in range(i + 1, len(points)):
@@ -71,12 +74,12 @@ def draw(surface, alpha_surface):
 
                     pygame.draw.aaline(
                         alpha_surface,
-                        (0, 255, 0, int(fade * 255)),
+                        (r, g, b, int(fade * 255)),
                         pygame.Vector2(points[i].x+w, points[i].y-w),
                         pygame.Vector2(points[j].x+w, points[j].y-w)
                         #int(fade * 5 + 1)
                     )
-        pygame.draw.circle(alpha_surface, (0, 255, 100, 0), (points[i].x, points[i].y), 5)
+        pygame.draw.circle(alpha_surface, (r, g, b, 0), (points[i].x, points[i].y), 5)
     surface.blit(alpha_surface, (0,0))
 
     #for point in points:
@@ -93,6 +96,7 @@ def main():
 
     init()
 
+    hue = 0.5
     alpha_surface = pygame.Surface(surface.get_size(), pygame.HWSURFACE )
     while is_running:
         # events
@@ -104,7 +108,14 @@ def main():
 
         # draw
         surface.fill([0,0,0]) # white background
-        draw(surface, alpha_surface)
+        hue +=0.005
+        if(hue>=1):
+            hue=0
+        r,g,b = colorsys.hsv_to_rgb(hue,1,255)
+        color = int(r),int(g),int(b)
+        #color =(0,0,128)
+
+        draw(surface, alpha_surface,color)
 
         clock.tick(60)
 
