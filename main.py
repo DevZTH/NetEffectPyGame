@@ -9,8 +9,11 @@
 # Licence:     GNU GPL 3
 #-------------------------------------------------------------------------------
 import pygame
+
 from pygame import gfxdraw
+from pygame import draw_py
 from dataclasses import dataclass
+
 import random
 import math
 
@@ -19,10 +22,8 @@ HEIGHT=240*2
 FADEDISTANCE=100
 POINTSCOUNT=50
 
-@dataclass
-class Point:
-    x: float = 0.0
-    y: float = 0.0
+
+class Point(pygame.math.Vector2):
     dx: float = 0.0
     dy: float = 0.0
 
@@ -33,7 +34,7 @@ points = []
 
 def init():
     for _ in range(POINTSCOUNT):
-        point = Point(x=random.uniform(0, WIDTH), y=random.uniform(0, HEIGHT))
+        point = Point(random.uniform(0, WIDTH), random.uniform(0, HEIGHT))
         angle = random.uniform(0, math.pi)
         point.dx = math.cos(angle) * 4
         point.dy = math.sin(angle) * 4
@@ -49,44 +50,50 @@ def update():
         if point.x < 0:
             point.dx = abs(point.dx)
         if point.x > WIDTH:
-          point.dx = -abs(point.dx)
+            point.dx = -abs(point.dx)
         if point.y < 0:
             point.dy = abs(point.dy)
         if point.y > HEIGHT:
-          point.dy = -abs(point.dy)
+            point.dy = -abs(point.dy)
+
 
 def draw(surface, alpha_surface):
     alpha_surface.fill([0,0,0,0])
     for i in range(0, len(points)):
         for j in range(i + 1, len(points)):
             # вычисляем расстояние между линиями в -00 -> 0..1
+            d = calc_distance(points[i], points[j])
             fade = -(calc_distance(points[i], points[j]) - FADEDISTANCE) / FADEDISTANCE
 
             # если фейд положителен рисуем
-            if fade > 0:
-                for w in range(int(fade * 5 + 1)):
+            if fade > 0 or d>10:
+                for w in range( int(fade * 5+1) ) :
+
                     pygame.draw.aaline(
                         alpha_surface,
                         (0, 255, 0, int(fade * 255)),
-                        (points[i].x+w, points[i].y),
-                        (points[j].x+w, points[j].y),
-                        1
+                        pygame.Vector2(points[i].x+w, points[i].y-w),
+                        pygame.Vector2(points[j].x+w, points[j].y-w)
+                        #int(fade * 5 + 1)
                     )
-        surface.blit(alpha_surface, (0,0))
+        pygame.draw.circle(alpha_surface, (0, 255, 100, 0), (points[i].x, points[i].y), 5)
+    surface.blit(alpha_surface, (0,0))
 
-    for point in points:
-        pygame.draw.circle(surface, (0, 255, 100, 0), (point.x, point.y), 5)
+    #for point in points:
+    #    pygame.draw.circle(surface, (0, 255, 100, 0), (point.x, point.y), 5)
 
 def main():
     pygame.init()
-    surface = pygame.display.set_mode(size=(WIDTH,HEIGHT), depth=32)
+    surface = pygame.display.set_mode(size=(WIDTH,HEIGHT), flags= \
+        pygame.DOUBLEBUF | pygame.HWSURFACE
+        )
     clock = pygame.time.Clock()
 
     is_running = True
 
     init()
 
-    alpha_surface = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+    alpha_surface = pygame.Surface(surface.get_size(), pygame.HWSURFACE )
     while is_running:
         # events
         for event in pygame.event.get():
@@ -99,7 +106,7 @@ def main():
         surface.fill([0,0,0]) # white background
         draw(surface, alpha_surface)
 
-        clock.tick(30)
+        clock.tick(60)
 
         pygame.display.update()
 
